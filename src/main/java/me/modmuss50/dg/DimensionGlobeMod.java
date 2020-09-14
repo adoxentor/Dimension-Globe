@@ -5,12 +5,10 @@ import me.modmuss50.dg.dim.GlobeDimension;
 import me.modmuss50.dg.globe.GlobeBlock;
 import me.modmuss50.dg.globe.GlobeBlockEntity;
 import me.modmuss50.dg.globe.GlobeBlockItem;
-import me.modmuss50.dg.utils.ServerExt;
 import me.modmuss50.dg.utils.GlobeManager;
 import me.modmuss50.dg.utils.GlobeSectionManagerServer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -19,12 +17,14 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.recipe.SpecialRecipeSerializer;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.tag.Tag;
 import net.minecraft.util.ActionResult;
@@ -80,10 +80,27 @@ public class DimensionGlobeMod implements ModInitializer {
 
 
         ServerTickEvents.END_WORLD_TICK.register(world -> {
-            if (!world.isClient && world.getDimension() ==GlobeManager.getDimensionType(world,DimensionType.OVERWORLD_ID)) {
-				GlobeManager.getInstance((ServerWorld) world).tick();
-			}
+            if (!world.isClient) {
+                for (Entity entity1 : world.getEntitiesByType(EntityType.ITEM, entity -> true)) {
+                    if (entity1 instanceof ItemEntity) {
+                        ItemEntity itemEntity = (ItemEntity) entity1;
+                        ItemStack stack = itemEntity.getStack();
+                        if (stack.getItem() == globeBlockItem) ;
+                        {
+                            int globeId = GlobeBlockItem.getGlobeId(stack);
+                            if (globeId > 0) {
+                                GlobeManager.updateGlobe(null, globeId, world.getRegistryKey(), entity1.getBlockPos(), world);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (world.getDimension() == GlobeManager.getDimensionType(world, DimensionType.OVERWORLD_ID)) {
+                GlobeManager.getInstance((ServerWorld) world).tick();
+            }
         });
+
 //            world -> {
 //
 //		});
@@ -94,6 +111,7 @@ public class DimensionGlobeMod implements ModInitializer {
 //                mix.registerWorld(dimensionRegistryKey,surfaceTypeObject,server);
 //            }
 //        });
+
 
         AttackBlockCallback.EVENT.register((playerEntity, world, hand, blockPos, direction) -> {
             if (isGlobe(world)) {
@@ -106,7 +124,7 @@ public class DimensionGlobeMod implements ModInitializer {
         });
 
         UseBlockCallback.EVENT.register((playerEntity, world, hand, blockHitResult) -> {
-			if (isGlobe(world)) {
+            if (isGlobe(world)) {
                 ItemStack stack = playerEntity.getStackInHand(hand);
                 if (stack.getItem() == Items.BARRIER) {
                     return ActionResult.FAIL;

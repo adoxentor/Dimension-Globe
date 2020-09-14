@@ -6,6 +6,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.Material;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.context.LootContext;
@@ -61,6 +62,16 @@ public class GlobeBlock extends BlockWithEntity {
 	@Override
 	public ItemStack getPickStack(BlockView world, BlockPos pos, BlockState state) {
 		return getDroppedStack(world, pos);
+	}
+
+	@Override
+	public void onSteppedOn(World world, BlockPos pos, Entity entity) {
+		if (!world.isClient&& ! (entity instanceof PlayerEntity) ) {
+			BlockEntity blockEntity = world.getBlockEntity(pos);
+			if (blockEntity instanceof GlobeBlockEntity) {
+				((GlobeBlockEntity) blockEntity).transportEntity(entity);
+			}
+		}
 	}
 
 	private ItemStack getDroppedStack(BlockView world, BlockPos pos) {

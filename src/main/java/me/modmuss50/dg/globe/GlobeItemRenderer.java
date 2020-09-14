@@ -22,7 +22,7 @@ public class GlobeItemRenderer {
 		GlobeBlockEntityRenderer.renderBase(baseBlock, matrix, vertexConsumerProvider, light, overlay);
 		if (stack.hasTag() && stack.getTag().contains("globe_id")) {
 			int globeId = stack.getTag().getInt("globe_id");
-			GlobeBlockEntityRenderer.renderGlobe(false, globeId, matrix, vertexConsumerProvider, light);
+			GlobeBlockEntityRenderer.renderGlobe(false, tickDelta, globeId, matrix, vertexConsumerProvider, light);
 			GlobeSectionManagerClient.requestGlobeUpdate(globeId);
 		}
 	}

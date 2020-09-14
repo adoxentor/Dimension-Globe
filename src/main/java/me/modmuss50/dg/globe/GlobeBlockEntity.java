@@ -10,6 +10,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -103,6 +104,25 @@ public class GlobeBlockEntity extends BlockEntity implements Tickable, BlockEnti
         globeID = GlobeManager.getInstance((ServerWorld) world).getNextGlobe().getId();
         markDirty();
         sync();
+    }
+    public void transportEntity(Entity entity) {
+        if (world.isClient) {
+            throw new RuntimeException();
+        }
+
+        if (DimensionGlobeMod.isGlobe(entity.world)) {
+//            transportPlayerOut(entity);
+        } else {
+            if (globeID == -1) {
+                newGlobe();
+            }
+            ServerExt serverExt = (ServerExt) entity.getServer();
+
+
+            GlobeDimensionPlacer globeDimensionPlacer = new GlobeDimensionPlacer(globeID, entity.world.getRegistryKey(), getPos(), baseBlock);
+            globeDimensionPlacer.placeEntity(entity, (ServerWorld) entity.world);
+//            FabricDimensions.teleport(playerEntity, DimensionGlobeMod.globeDimension, globeDimensionPlacer);
+        }
     }
 
     public void transportPlayer(ServerPlayerEntity playerEntity) {

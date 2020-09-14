@@ -64,10 +64,14 @@ public class GlobeBlockItem extends BlockItem {
 					((GlobeBlockEntity) blockEntity).setBaseBlock(Registry.BLOCK.get(identifier));
 				}
 				if (stack.getTag().contains("globe_id")) {
-					((GlobeBlockEntity) blockEntity).setGlobeID(stack.getTag().getInt("globe_id"));
+					((GlobeBlockEntity) blockEntity).setGlobeID(getGlobeId(stack));
 				}
 			}
 		}
 		return super.postPlacement(pos, world, player, stack, state);
 	}
+
+    public static int getGlobeId(ItemStack stack) {
+        return stack.getTag() != null ? stack.getTag().getInt("globe_id") : 0;
+    }
 }

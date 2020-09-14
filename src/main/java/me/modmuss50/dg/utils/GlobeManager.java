@@ -3,6 +3,7 @@ package me.modmuss50.dg.utils;
 import it.unimi.dsi.fastutil.ints.*;
 import me.modmuss50.dg.DimensionGlobeMod;
 import me.modmuss50.dg.globe.GlobeBlockEntity;
+import net.minecraft.block.Block;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ChunkTicketType;
@@ -31,10 +32,7 @@ public class GlobeManager extends PersistentState {
         RegistryKey<DimensionType> overworldRegistryKey = DimensionType.OVERWORLD_REGISTRY_KEY;
         String path = overworldRegistryKey.getValue().getPath();
         DimensionType dimensionType = getDimensionType(world, overworldRegistryKey);
-
-        if (world.getDimension() != (dimensionType)) {
-            world = world.getServer().getWorld(OVERWORLD);
-        }
+        world = world.getServer().getWorld(OVERWORLD);
         final ServerWorld serverWorld = world;
         return serverWorld != null ? serverWorld.getPersistentStateManager()
             .getOrCreate(() -> new GlobeManager(serverWorld), SAVE_KEY) : null;
@@ -64,6 +62,24 @@ public class GlobeManager extends PersistentState {
     public GlobeManager(ServerWorld world) {
         super(SAVE_KEY);
         this.world = world;
+    }
+
+    public static void updateGlobe(Block baseBlock, int globeId, RegistryKey<World> returnDimension, BlockPos returnPos, ServerWorld serverWorld) {
+        Globe globe = getInstance(serverWorld).getGlobeByID(globeId);
+//		GlobeManager.getDimensionType(serverWorld,DimensionGlobeMod.dimensionRegistryKey);
+        BlockPos globePos = globe.getGlobeLocation();
+        BlockPos spawnPos = globePos.add(8, 1, 8);
+        ServerWorld globeWorld = getInstance(serverWorld).getGlobeWorld();
+
+        globeWorld.setBlockState(spawnPos.down(), DimensionGlobeMod.globeBlock.getDefaultState());
+        GlobeBlockEntity exitBlockEntity = (GlobeBlockEntity) globeWorld.getBlockEntity(spawnPos.down());
+        exitBlockEntity.setGlobeID(globeId);
+        if(baseBlock != null){
+            exitBlockEntity.setBaseBlock(baseBlock);
+        }
+        if (returnPos != null && returnDimension != null) {
+            exitBlockEntity.setReturnPos(returnPos, returnDimension);
+        }
     }
 
     public Globe getNextGlobe() {

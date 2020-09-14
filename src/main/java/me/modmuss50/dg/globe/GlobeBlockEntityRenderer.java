@@ -20,12 +20,16 @@ import net.minecraft.client.render.model.BakedModel;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.profiler.Profiler;
 
 import java.util.Map;
+
+import static me.modmuss50.dg.DimensionGlobeMod.globeBlockItem;
 
 public class GlobeBlockEntityRenderer extends BlockEntityRenderer<GlobeBlockEntity> {
     public GlobeBlockEntityRenderer(BlockEntityRenderDispatcher dispatcher) {
@@ -37,7 +41,7 @@ public class GlobeBlockEntityRenderer extends BlockEntityRenderer<GlobeBlockEnti
     @Override
     public void render(GlobeBlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         final boolean inner = DimensionGlobeMod.isGlobe(blockEntity.getWorld());
-        renderGlobe(inner, blockEntity.getGlobeID(), matrices, vertexConsumers, light);
+        renderGlobe(inner,tickDelta, blockEntity.getGlobeID(), matrices, vertexConsumers, light);
         if (inner) {
             matrices.push();
             matrices.translate(0, 1, 0);
@@ -54,7 +58,7 @@ public class GlobeBlockEntityRenderer extends BlockEntityRenderer<GlobeBlockEnti
         }
     }
 
-    public static void renderGlobe(boolean inner, int globeID, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light) {
+    public static void renderGlobe(boolean inner, float tickDelta, int globeID, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light) {
         if (renderDepth > 2) {
             return;
         }
@@ -95,6 +99,17 @@ public class GlobeBlockEntityRenderer extends BlockEntityRenderer<GlobeBlockEnti
             profiler.push("entities");
             for (Entity entity : section.getEntities()) {
                 Vec3d position = section.getEntityVec3dMap().get(entity);
+                if (entity instanceof ItemEntity) {
+                    ItemEntity itemEntity = (ItemEntity) entity;
+                    ItemStack stack = itemEntity.getStack();
+                    if (stack.getItem() == globeBlockItem) ;
+                    {
+                        int itemGlobeId = GlobeBlockItem.getGlobeId(stack);
+                        if (itemGlobeId == globeID) {
+                            continue;
+                        }
+                    }
+                }
 
                 matrices.push();
 
@@ -108,7 +123,7 @@ public class GlobeBlockEntityRenderer extends BlockEntityRenderer<GlobeBlockEnti
                 entity.prevX = 0;
                 entity.prevY = 0;
                 entity.prevZ = 0;
-                MinecraftClient.getInstance().getEntityRenderDispatcher().render(entity, 0.0D, 0.0D, 0.0D, entity.yaw, 1, matrices, vertexConsumers, light);
+                MinecraftClient.getInstance().getEntityRenderDispatcher().render(entity, 0.0D, 0.0D, 0.0D, entity.yaw, tickDelta, matrices, vertexConsumers, light);
                 matrices.pop();
             }
             matrices.pop();
