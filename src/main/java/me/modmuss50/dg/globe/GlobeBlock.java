@@ -1,6 +1,6 @@
 package me.modmuss50.dg.globe;
 
-import me.modmuss50.dg.DimensionGlobe;
+import me.modmuss50.dg.DimensionGlobeMod;
 import net.fabricmc.fabric.api.block.FabricBlockSettings;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
@@ -66,7 +66,7 @@ public class GlobeBlock extends BlockWithEntity {
 	private ItemStack getDroppedStack(BlockView world, BlockPos pos) {
 		BlockEntity blockEntity = world.getBlockEntity(pos);
 		if (blockEntity instanceof GlobeBlockEntity) {
-			ItemStack stack = DimensionGlobe.globeBlockItem.getWithBase(((GlobeBlockEntity) blockEntity).getBaseBlock());
+			ItemStack stack = DimensionGlobeMod.globeBlockItem.getWithBase(((GlobeBlockEntity) blockEntity).getBaseBlock());
 			stack.getTag().putInt("globe_id", ((GlobeBlockEntity) blockEntity).getGlobeID());
 			return stack;
 		}

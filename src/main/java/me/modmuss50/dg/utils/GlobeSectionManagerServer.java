@@ -3,17 +3,14 @@ package me.modmuss50.dg.utils;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import me.modmuss50.dg.DimensionGlobe;
+import me.modmuss50.dg.DimensionGlobeMod;
 import me.modmuss50.dg.globe.GlobeBlockEntity;
-import net.fabricmc.fabric.api.network.PacketConsumer;
-import net.fabricmc.fabric.api.network.PacketContext;
 import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.CustomPayloadS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.PacketByteBuf;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
@@ -34,7 +31,7 @@ public class GlobeSectionManagerServer {
 		List<ServerPlayerEntity> nearbyPlayers = new ArrayList<>();
 
 		for (ServerPlayerEntity player : serverWorld.getPlayers()) {
-			if (player.squaredDistanceTo(new Vec3d(blockEntity.getPos())) < 64) {
+			if (player.squaredDistanceTo(new Vec3d(blockEntity.getPos().getX(),blockEntity.getPos().getY(),blockEntity.getPos().getZ())) < 64) {
 				nearbyPlayers.add(player);
 			}
 		}
@@ -45,7 +42,7 @@ public class GlobeSectionManagerServer {
 
 		GlobeManager.Globe globe = GlobeManager.getInstance(serverWorld).getGlobeByID(blockEntity.getGlobeID());
 
-		ServerWorld updateWorld = serverWorld.getServer().getWorld(blockEntity.isInner() ? blockEntity.getReturnDimType() : DimensionGlobe.globeDimension);
+		ServerWorld updateWorld = serverWorld.getServer().getWorld(blockEntity.isInner() ? blockEntity.getWorldRegistryKey() : DimensionGlobeMod.dimensionRegistryKey);
 
 		if (blocks) {
 			globe.updateBlockSection(updateWorld, blockEntity.isInner(), blockEntity);
@@ -69,14 +66,14 @@ public class GlobeSectionManagerServer {
 			buf.writeCompoundTag(section.toEntityTag(blockEntity.isInner() ? blockEntity.getInnerScanPos() : globe.getGlobeLocation()));
 		}
 
-		CustomPayloadS2CPacket clientBoundPacket = new CustomPayloadS2CPacket(new Identifier(DimensionGlobe.MOD_ID, "section_update"), buf);
+		CustomPayloadS2CPacket clientBoundPacket = new CustomPayloadS2CPacket(new Identifier(DimensionGlobeMod.MOD_ID, "section_update"), buf);
 		for (ServerPlayerEntity nearbyPlayer : nearbyPlayers) {
 			nearbyPlayer.networkHandler.sendPacket(clientBoundPacket);
 		}
 	}
 
 	public static void register() {
-		ServerSidePacketRegistry.INSTANCE.register(new Identifier(DimensionGlobe.MOD_ID, "update_request"), (packetContext, packetByteBuf) -> {
+		ServerSidePacketRegistry.INSTANCE.register(new Identifier(DimensionGlobeMod.MOD_ID, "update_request"), (packetContext, packetByteBuf) -> {
 			final int amount = packetByteBuf.readInt();
 			IntSet updateQueue = new IntOpenHashSet();
 			for (int i = 0; i < amount; i++) {
@@ -100,7 +97,7 @@ public class GlobeSectionManagerServer {
 
 		GlobeManager.Globe globe = GlobeManager.getInstance(serverWorld).getGlobeByID(globeID);
 
-		ServerWorld updateWorld = serverWorld.getServer().getWorld(DimensionGlobe.globeDimension);
+		ServerWorld updateWorld = GlobeManager.getInstance(serverWorld).getGlobeWorld();
 
 		if (blocks) {
 			globe.updateBlockSection(updateWorld, false, null);
@@ -121,7 +118,7 @@ public class GlobeSectionManagerServer {
 			buf.writeCompoundTag(section.toEntityTag(globe.getGlobeLocation()));
 		}
 
-		CustomPayloadS2CPacket clientBoundPacket = new CustomPayloadS2CPacket(new Identifier(DimensionGlobe.MOD_ID, "section_update"), buf);
+		CustomPayloadS2CPacket clientBoundPacket = new CustomPayloadS2CPacket(new Identifier(DimensionGlobeMod.MOD_ID, "section_update"), buf);
 		playerEntity.networkHandler.sendPacket(clientBoundPacket);
 	}
 

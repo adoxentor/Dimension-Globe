@@ -8,7 +8,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "me.modmuss50.dg.DimensionGlobe"
+      "me.modmuss50.dg.DimensionGlobeMod"
     ],
     "client": [
       "me.modmuss50.dg.DimensionGlobeClient"
@@ -17,7 +17,7 @@
   "depends": {
     "fabricloader": ">=0.7.4",
     "fabric": "*",
-    "minecraft": "1.15.x"
+    "minecraft": "1.16.x"
   },
   "mixins": [
     "globedimension.mixins.json"

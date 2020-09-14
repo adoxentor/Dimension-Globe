@@ -1,79 +1,79 @@
 package me.modmuss50.dg.dim;
 
-import me.modmuss50.dg.DimensionGlobe;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.mojang.serialization.Lifecycle;
+import me.modmuss50.dg.DimensionGlobeMod;
+import net.minecraft.block.Blocks;
+import net.minecraft.tag.BlockTags;
+import net.minecraft.util.registry.*;
 import net.minecraft.world.World;
-import net.minecraft.world.biome.Biomes;
-import net.minecraft.world.biome.source.BiomeSourceType;
-import net.minecraft.world.dimension.Dimension;
+import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.source.HorizontalVoronoiBiomeAccessType;
+import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
+import net.minecraft.world.gen.chunk.*;
 
-public class GlobeDimension extends Dimension {
-	public GlobeDimension(World world, DimensionType type) {
-		super(world, type, 0f);
-	}
+import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.function.Supplier;
 
-	@Override
-	public ChunkGenerator<?> createChunkGenerator() {
-		return DimensionGlobe.globeChunkGenerator.create(world, BiomeSourceType.FIXED
-				.applyConfig(BiomeSourceType.FIXED.getConfig(world.getLevelProperties())
-						.setBiome(Biomes.PLAINS)), DimensionGlobe.globeChunkGenerator.createSettings());
-	}
+public class GlobeDimension extends DimensionType {
 
-	@Override
-	public BlockPos getSpawningBlockInChunk(ChunkPos chunkPos, boolean checkMobSpawnValidity) {
-		return null;
-	}
+    public static ChunkGenerator createVoidGenerator(DynamicRegistryManager rm) {
+        MutableRegistry<Biome> biomeRegistry = rm.get(Registry.BIOME_KEY);
 
-	@Override
-	public BlockPos getTopSpawningBlockPosition(int x, int z, boolean checkMobSpawnValidity) {
-		return null;
-	}
+        StructuresConfig structuresConfig = new StructuresConfig(
+            Optional.of(StructuresConfig.DEFAULT_STRONGHOLD),
+            Maps.newHashMap(ImmutableMap.of(
+//                StructureFeature.VILLAGE, StructuresConfig.DEFAULT_STRUCTURES.get(StructureFeature.VILLAGE)
+            ))
+        );
+        FlatChunkGeneratorConfig flatChunkGeneratorConfig = new FlatChunkGeneratorConfig(structuresConfig,
+            biomeRegistry);
+        flatChunkGeneratorConfig.getLayers().add(new FlatChunkGeneratorLayer(1, Blocks.BEDROCK));
+        flatChunkGeneratorConfig.updateLayerBlocks();
 
-	@Override
-	public float getSkyAngle(long timeOfDay, float tickDelta) {
-		return 0;
-	}
+        return new FlatChunkGenerator(flatChunkGeneratorConfig);
+    }
 
-	@Override
-	public boolean hasVisibleSky() {
-		return false;
-	}
+    public static void addDimension(
+        long argSeed,
+        SimpleRegistry<DimensionOptions> registry,
+        RegistryKey<DimensionOptions> key,
+        RegistryKey<World> worldKey,
+        Supplier<DimensionType> dimensionTypeSupplier,
+        ChunkGenerator chunkGenerator
+    ) {
+        if (!registry.getIds().contains(key.getValue())) {
+            registry.add(
+                key,
+                new DimensionOptions(
+                    dimensionTypeSupplier,
+                    chunkGenerator
+                ),
+                Lifecycle.experimental()
+            );
+        }
+    }
 
-	@Override
-	public Vec3d getFogColor(float skyAngle, float tickDelta) {
-		float f = MathHelper.cos(skyAngle * 6.2831855F) * 2.0F + 0.5F;
-		f = MathHelper.clamp(f, 0.0F, 1.0F);
-		float g = 0.7529412F;
-		float h = 0.84705883F;
-		float i = 1.0F;
-		g *= f * 0.94F + 0.06F;
-		h *= f * 0.94F + 0.06F;
-		i *= f * 0.91F + 0.09F;
-		return new Vec3d(g, h, i);
-	}
+    public static void addAlternateDimensions(SimpleRegistry<DimensionOptions> registry,
+                                              DynamicRegistryManager rm,
+                                              long seed) {
+        addDimension(
+            seed,
+            registry,
+            DimensionGlobeMod.alternate5Option,
+            DimensionGlobeMod.dimensionRegistryKey,
+            () -> DimensionGlobeMod.surfaceTypeObject,
+            createVoidGenerator(rm)
+        );
+    }
 
-	@Override
-	public boolean canPlayersSleep() {
-		return false;
-	}
+    public GlobeDimension() {
+        super(OptionalLong.empty(), true, false, false, true, 1.0D, false, false, true, false, true, 256, HorizontalVoronoiBiomeAccessType.INSTANCE, BlockTags.INFINIBURN_OVERWORLD.getId(), OVERWORLD_ID, 0.0F);
 
-	@Override
-	public boolean isFogThick(int x, int z) {
-		return false;
-	}
+    }
 
-	@Override
-	public DimensionType getType() {
-		return DimensionGlobe.globeDimension;
-	}
 
-	@Override
-	public float getBrightness(int lightLevel) {
-		return 15F;
-	}
 }

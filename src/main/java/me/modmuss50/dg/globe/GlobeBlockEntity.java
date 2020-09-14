@@ -1,13 +1,13 @@
 package me.modmuss50.dg.globe;
 
-import me.modmuss50.dg.DimensionGlobe;
-import me.modmuss50.dg.dim.ExitPlacer;
+import me.modmuss50.dg.DimensionGlobeMod;
 import me.modmuss50.dg.dim.GlobeDimensionPlacer;
 import me.modmuss50.dg.utils.GlobeManager;
 import me.modmuss50.dg.utils.GlobeSectionManagerServer;
+import me.modmuss50.dg.utils.ServerExt;
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
-import net.fabricmc.fabric.api.dimension.v1.FabricDimensions;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.nbt.CompoundTag;
@@ -18,159 +18,173 @@ import net.minecraft.util.Tickable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.registry.Registry;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.World;
 
 public class GlobeBlockEntity extends BlockEntity implements Tickable, BlockEntityClientSerializable {
 
-	private int globeID = -1;
-	private Block baseBlock;
+    private int globeID = -1;
+    private Block baseBlock;
 
-	private BlockPos returnPos;
-	private DimensionType returnDimType;
+    private BlockPos returnPos;
+    private RegistryKey<World> worldRegistryKey;
 
-	public GlobeBlockEntity() {
-		super(DimensionGlobe.globeBlockEntityType);
-	}
+    public GlobeBlockEntity() {
+        super(DimensionGlobeMod.globeBlockEntityType);
+    }
 
-	@Override
-	public void tick() {
-		if (!world.isClient && globeID != -1) {
-			if (!isInner()) {
-				GlobeManager.getInstance((ServerWorld) world)
-						.markGlobeForTicking(globeID);
-			}
-		}
-		if (!world.isClient) {
-			if (world.getTime() % 20 == 0) {
-				GlobeSectionManagerServer.updateAndSyncToPlayers(this, true);
-			} else {
-				GlobeSectionManagerServer.updateAndSyncToPlayers(this, false);
-			}
-		}
-	}
+    @Override
+    public void tick() {
+        if (!world.isClient && globeID != -1) {
+            if (!isInner()) {
+                GlobeManager.getInstance((ServerWorld) world)
+                    .markGlobeForTicking(globeID);
+            }
+        }
+        if (!world.isClient) {
+            if (world.getTime() % 20 == 0) {
+                GlobeSectionManagerServer.updateAndSyncToPlayers(this, true);
+            } else {
+                GlobeSectionManagerServer.updateAndSyncToPlayers(this, false);
+            }
+        }
+    }
 
-	@Override
-	public void fromTag(CompoundTag tag) {
-		super.fromTag(tag);
-		globeID = tag.getInt("globe_id");
-		if (tag.contains("base_block")) {
-			Identifier identifier = new Identifier(tag.getString("base_block"));
-			if (Registry.BLOCK.getOrEmpty(identifier).isPresent()) {
-				baseBlock = Registry.BLOCK.get(identifier);
-			}
-		}
-		if (tag.contains("return_x")) {
-			returnPos = new BlockPos(tag.getInt("return_x"), tag.getInt("return_y"), tag.getInt("return_z"));
+    @Override
+    public void fromTag(BlockState state, CompoundTag tag) {
+        super.fromTag(state, tag);
+        globeID = tag.getInt("globe_id");
+        if (tag.contains("base_block")) {
+            Identifier identifier = new Identifier(tag.getString("base_block"));
+            if (Registry.BLOCK.getOrEmpty(identifier).isPresent()) {
+                baseBlock = Registry.BLOCK.get(identifier);
+            }
+        }
+        if (tag.contains("return_x")) {
+            returnPos = new BlockPos(tag.getInt("return_x"), tag.getInt("return_y"), tag.getInt("return_z"));
+            Identifier returnType = new Identifier(tag.getString("return_dim"));
+//            DimensionType dimensionType = GlobeManager.getDimensionType(world, returnType);
+            RegistryKey<World> returnWorld = RegistryKey.of(Registry.DIMENSION, returnType);
+            if (returnWorld != null) {
+                worldRegistryKey = returnWorld;
+            } else {
+                returnPos = null;
+                worldRegistryKey = null;
+            }
+        }
+    }
 
-			Identifier returnType = new Identifier(tag.getString("return_dim"));
-			if (Registry.DIMENSION_TYPE.getOrEmpty(returnType).isPresent()) {
-				returnDimType = Registry.DIMENSION_TYPE.get(returnType);
-			} else {
-				returnPos = null;
-				returnDimType = null;
-			}
-		}
-	}
+    @Override
+    public CompoundTag toTag(CompoundTag tag) {
+        tag.putInt("globe_id", globeID);
+        if (baseBlock != null) {
+            tag.putString("base_block", Registry.BLOCK.getId(baseBlock).toString());
+        }
 
-	@Override
-	public CompoundTag toTag(CompoundTag tag) {
-		tag.putInt("globe_id", globeID);
-		if (baseBlock != null) {
-			tag.putString("base_block", Registry.BLOCK.getId(baseBlock).toString());
-		}
+        if (returnPos != null && worldRegistryKey != null) {
+            tag.putInt("return_x", returnPos.getX());
+            tag.putInt("return_y", returnPos.getY());
+            tag.putInt("return_z", returnPos.getZ());
 
-		if (returnPos != null && returnDimType != null) {
-			tag.putInt("return_x", returnPos.getX());
-			tag.putInt("return_y", returnPos.getY());
-			tag.putInt("return_z", returnPos.getZ());
-			tag.putString("return_dim", Registry.DIMENSION_TYPE.getId(returnDimType).toString());
-		}
+//            GlobeManager.getDimensionType(world, returnDimType);
 
-		return super.toTag(tag);
-	}
+            tag.putString("return_dim", worldRegistryKey.getValue().toString());
+        }
+
+        return super.toTag(tag);
+    }
 
 
-	private void newGlobe() {
-		if (world.isClient) {
-			throw new RuntimeException();
-		}
+    private void newGlobe() {
+        if (world.isClient) {
+            throw new RuntimeException();
+        }
 
-		globeID = GlobeManager.getInstance((ServerWorld) world).getNextGlobe().getId();
-		markDirty();
-		sync();
-	}
+        globeID = GlobeManager.getInstance((ServerWorld) world).getNextGlobe().getId();
+        markDirty();
+        sync();
+    }
 
-	public void transportPlayer(ServerPlayerEntity playerEntity) {
-		if (world.isClient) {
-			throw new RuntimeException();
-		}
+    public void transportPlayer(ServerPlayerEntity playerEntity) {
+        if (world.isClient) {
+            throw new RuntimeException();
+        }
 
-		if (playerEntity.world.getDimension().getType() == DimensionGlobe.globeDimension) {
-			transportPlayerOut(playerEntity);
-		} else {
-			if (globeID == -1) {
-				newGlobe();
-			}
+        if (DimensionGlobeMod.isGlobe(playerEntity.getServerWorld())) {
+            transportPlayerOut(playerEntity);
+        } else {
+            if (globeID == -1) {
+                newGlobe();
+            }
+            ServerExt serverExt = (ServerExt) playerEntity.server;
 
-			FabricDimensions.teleport(playerEntity, DimensionGlobe.globeDimension, new GlobeDimensionPlacer(globeID, world.getDimension().getType(), getPos(), baseBlock));
-		}
-	}
 
-	public void setReturnPos(BlockPos returnPos, DimensionType returnDimType) {
-		this.returnPos = returnPos;
-		this.returnDimType = returnDimType;
-		markDirty();
-	}
+            GlobeDimensionPlacer globeDimensionPlacer = new GlobeDimensionPlacer(globeID, playerEntity.world.getRegistryKey(), getPos(), baseBlock);
+            globeDimensionPlacer.placeEntity(playerEntity, (ServerWorld) playerEntity.world);
+//            FabricDimensions.teleport(playerEntity, DimensionGlobeMod.globeDimension, globeDimensionPlacer);
+        }
+    }
 
-	public void transportPlayerOut(ServerPlayerEntity playerEntity) {
-		if (getWorld().getDimension().getType() == DimensionGlobe.globeDimension) {
-			DimensionType teleportDim = returnDimType == null ? DimensionType.OVERWORLD : returnDimType;
-			FabricDimensions.teleport(playerEntity, teleportDim, new ExitPlacer(returnPos));
-		}
-	}
+    public void setReturnPos(BlockPos returnPos, RegistryKey<World> returnDimType) {
+        this.returnPos = returnPos;
+        this.worldRegistryKey = returnDimType;
+        markDirty();
+    }
 
-	public DimensionType getReturnDimType() {
-		return returnDimType == null ? DimensionType.OVERWORLD : returnDimType;
-	}
+    public void transportPlayerOut(ServerPlayerEntity playerEntity) {
+        if (isInner()) {
 
-	public BlockPos getInnerScanPos() {
-		if (returnPos == null) {
-			return BlockPos.ORIGIN;
-		}
-		return returnPos.subtract(new Vec3i(8, 8 , 8));
-	}
+            RegistryKey<World> teleportDim = worldRegistryKey == null ? World.OVERWORLD : worldRegistryKey;
 
-	public boolean isInner() {
-		return getWorld().getDimension().getType() == DimensionGlobe.globeDimension;
-	}
+            ServerWorld targetWorld = playerEntity.server.getWorld(teleportDim);
+            playerEntity.teleport(targetWorld, returnPos.getX(), returnPos.getY(), returnPos.getZ(), playerEntity.yaw, playerEntity.pitch);
+//            FabricDimensions.teleport(playerEntity, teleportDim, new ExitPlacer(returnPos));
+        }
+    }
 
-	public int getGlobeID() {
-		return globeID;
-	}
+    public RegistryKey<World> getWorldRegistryKey() {
+        return worldRegistryKey == null ? World.OVERWORLD : worldRegistryKey;
+    }
 
-	public void setGlobeID(int globeID) {
-		this.globeID = globeID;
-	}
+    public BlockPos getInnerScanPos() {
+        if (returnPos == null) {
+            return BlockPos.ORIGIN;
+        }
+        return returnPos.subtract(new Vec3i(8, 8, 8));
+    }
 
-	@Override
-	public void fromClientTag(CompoundTag compoundTag) {
-		fromTag(compoundTag);
-	}
+    public boolean isInner() {
+        World world = getWorld();
+        return world != null && DimensionGlobeMod.isGlobe(world);
+    }
 
-	@Override
-	public CompoundTag toClientTag(CompoundTag compoundTag) {
-		return toTag(compoundTag);
-	}
+    public int getGlobeID() {
+        return globeID;
+    }
 
-	public Block getBaseBlock() {
-		if (baseBlock == null) {
-			return Blocks.OAK_PLANKS;
-		}
-		return baseBlock;
-	}
+    public void setGlobeID(int globeID) {
+        this.globeID = globeID;
+    }
 
-	public void setBaseBlock(Block baseBlock) {
-		this.baseBlock = baseBlock;
-		markDirty();
-	}
+    @Override
+    public void fromClientTag(CompoundTag compoundTag) {
+        fromTag(null, compoundTag);
+    }
+
+    @Override
+    public CompoundTag toClientTag(CompoundTag compoundTag) {
+        return toTag(compoundTag);
+    }
+
+    public Block getBaseBlock() {
+        if (baseBlock == null) {
+            return Blocks.OAK_PLANKS;
+        }
+        return baseBlock;
+    }
+
+    public void setBaseBlock(Block baseBlock) {
+        this.baseBlock = baseBlock;
+        markDirty();
+    }
 }

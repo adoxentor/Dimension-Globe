@@ -1,6 +1,6 @@
 package me.modmuss50.dg.globe;
 
-import me.modmuss50.dg.DimensionGlobe;
+import me.modmuss50.dg.DimensionGlobeMod;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -12,8 +12,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.DefaultedList;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
@@ -26,7 +26,7 @@ public class GlobeBlockItem extends BlockItem {
 	@Override
 	public void appendStacks(ItemGroup group, DefaultedList<ItemStack> stacks) {
 		if (this.isIn(group)) {
-			for (Block block : DimensionGlobe.BASE_BLOCK_TAG.values()) {
+			for (Block block : DimensionGlobeMod.BASE_BLOCK_TAG.values()) {
 				stacks.add(getWithBase(block));
 			}
 		}
@@ -44,9 +44,10 @@ public class GlobeBlockItem extends BlockItem {
 
 	@Override
 	public ActionResult place(ItemPlacementContext context) {
-		if (context.getPlayer().world.getDimension().getType() == DimensionGlobe.globeDimension) {
-			if (!context.getPlayer().world.isClient) {
-				context.getPlayer().sendMessage(new TranslatableText("globedimension.block.error"));
+		World world = context.getPlayer().world;
+		if (DimensionGlobeMod.isGlobe(world)) {
+			if (!world.isClient) {
+				context.getPlayer().sendMessage(new TranslatableText("globedimension.block.error"),true);
 			}
 			return ActionResult.FAIL;
 		}

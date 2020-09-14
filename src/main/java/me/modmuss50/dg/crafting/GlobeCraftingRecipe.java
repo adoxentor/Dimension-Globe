@@ -1,6 +1,6 @@
 package me.modmuss50.dg.crafting;
 
-import me.modmuss50.dg.DimensionGlobe;
+import me.modmuss50.dg.DimensionGlobeMod;
 import net.minecraft.block.Block;
 import net.minecraft.inventory.CraftingInventory;
 import net.minecraft.item.BlockItem;
@@ -28,27 +28,27 @@ public class GlobeCraftingRecipe extends SpecialCraftingRecipe {
 	@Override
 	public ItemStack craft(CraftingInventory inv) {
 		for (int glassSlot : glassSlots) {
-			if (inv.getInvStack(glassSlot).getItem() != Items.GLASS) {
+			if (inv.getStack(glassSlot).getItem() != Items.GLASS) {
 				return ItemStack.EMPTY;
 			}
 		}
-		if (!inv.getInvStack(4).isEmpty()) {
+		if (!inv.getStack(4).isEmpty()) {
 			return ItemStack.EMPTY;
 		}
 		ItemStack blockStack = ItemStack.EMPTY;
 		for (int blockSlot : blockSlots) {
 			if (!blockStack.isEmpty()) {
-				if (blockStack.getItem() != inv.getInvStack(blockSlot).getItem()) {
+				if (blockStack.getItem() != inv.getStack(blockSlot).getItem()) {
 					return ItemStack.EMPTY;
 				}
 			}
-			blockStack = inv.getInvStack(blockSlot);
+			blockStack = inv.getStack(blockSlot);
 			if (blockStack.isEmpty()) {
 				return ItemStack.EMPTY;
 			}
 			if (blockStack.getItem() instanceof BlockItem) {
 				Block block = ((BlockItem) blockStack.getItem()).getBlock();
-				if (!block.matches(DimensionGlobe.BASE_BLOCK_TAG)) {
+				if (!block.isIn(DimensionGlobeMod.BASE_BLOCK_TAG)) {
 					return ItemStack.EMPTY;
 				}
 			} else {
@@ -56,7 +56,7 @@ public class GlobeCraftingRecipe extends SpecialCraftingRecipe {
 			}
 		}
 		Block block = ((BlockItem) blockStack.getItem()).getBlock();
-		return DimensionGlobe.globeBlockItem.getWithBase(block);
+		return DimensionGlobeMod.globeBlockItem.getWithBase(block);
 	}
 
 	@Override
@@ -66,6 +66,6 @@ public class GlobeCraftingRecipe extends SpecialCraftingRecipe {
 
 	@Override
 	public RecipeSerializer<?> getSerializer() {
-		return DimensionGlobe.GLOBE_CRAFTING;
+		return DimensionGlobeMod.GLOBE_CRAFTING;
 	}
 }

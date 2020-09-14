@@ -63,7 +63,8 @@ public class GlobeSection {
 	public void buildEntityList(World world, BlockPos origin) {
 		entities.clear();
 		entityVec3dMap.clear();
-		for (Entity entity : world.getEntities(null, new Box(origin.getX(), origin.getY(), origin.getZ(), origin.getX() + GLOBE_SIZE, origin.getY() + GLOBE_SIZE, origin.getZ() + GLOBE_SIZE))) {
+		Box box = new Box(origin.getX(), origin.getY(), origin.getZ(), origin.getX() + GLOBE_SIZE, origin.getY() + GLOBE_SIZE, origin.getZ() + GLOBE_SIZE);
+		for (Entity entity : world.getOtherEntities(null, box)) {
 			entities.add(entity);
 		}
 	}
@@ -154,7 +155,7 @@ public class GlobeSection {
 
 			entityTag.put("entity_data", entityData);
 
-			Vec3d relativePos = entity.getPos().subtract(new Vec3d(origin));
+			Vec3d relativePos = entity.getPos().subtract(new Vec3d(origin.getX(),origin.getY(),origin.getZ()));
 			entityTag.putDouble("entity_x", relativePos.getX());
 			entityTag.putDouble("entity_y", relativePos.getY());
 			entityTag.putDouble("entity_z", relativePos.getZ());

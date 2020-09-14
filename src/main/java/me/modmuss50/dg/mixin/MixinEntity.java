@@ -1,6 +1,6 @@
 package me.modmuss50.dg.mixin;
 
-import me.modmuss50.dg.DimensionGlobe;
+import me.modmuss50.dg.DimensionGlobeMod;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.BlockPos;
@@ -20,7 +20,7 @@ public class MixinEntity {
 
 	@Inject(method = "canExplosionDestroyBlock", at = @At("HEAD"), cancellable = true)
 	private void canExplosionDestroyBlock(Explosion explosion, BlockView blockView, BlockPos pos, BlockState state, float explosionPower, CallbackInfoReturnable<Boolean> infoReturnable) {
-		if (world.getDimension().getType() == DimensionGlobe.globeDimension && state.getBlock() == DimensionGlobe.globeBlock) {
+		if (DimensionGlobeMod.isGlobe(world) && state.getBlock() == DimensionGlobeMod.globeBlock) {
 			infoReturnable.setReturnValue(false);
 		}
 	}

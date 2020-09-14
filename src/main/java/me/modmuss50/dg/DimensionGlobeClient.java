@@ -12,8 +12,8 @@ import net.minecraft.util.Identifier;
 public class DimensionGlobeClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
-		BlockEntityRendererRegistry.INSTANCE.register(DimensionGlobe.globeBlockEntityType, GlobeBlockEntityRenderer::new);
-		ClientSidePacketRegistry.INSTANCE.register(new Identifier(DimensionGlobe.MOD_ID, "section_update"), (packetContext, packetByteBuf) -> {
+		BlockEntityRendererRegistry.INSTANCE.register(DimensionGlobeMod.globeBlockEntityType, GlobeBlockEntityRenderer::new);
+		ClientSidePacketRegistry.INSTANCE.register(new Identifier(DimensionGlobeMod.MOD_ID, "section_update"), (packetContext, packetByteBuf) -> {
 			final int id = packetByteBuf.readInt();
 			final boolean inner = packetByteBuf.readBoolean();
 			final boolean blocks = packetByteBuf.readBoolean();

@@ -5,13 +5,14 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import me.modmuss50.dg.DimensionGlobe;
+import me.modmuss50.dg.DimensionGlobeMod;
 import me.modmuss50.dg.globe.GlobeBlockItem;
 import net.fabricmc.fabric.api.event.client.ClientTickCallback;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.c2s.play.CustomPayloadC2SPacket;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.PacketByteBuf;
+
 
 public class GlobeSectionManagerClient {
 
@@ -68,7 +69,7 @@ public class GlobeSectionManagerClient {
 			buf.writeInt(i);
 		}
 
-		CustomPayloadC2SPacket serverBoundPacket = new CustomPayloadC2SPacket(new Identifier(DimensionGlobe.MOD_ID, "update_request"), buf);
+		CustomPayloadC2SPacket serverBoundPacket = new CustomPayloadC2SPacket(new Identifier(DimensionGlobeMod.MOD_ID, "update_request"), buf);
 		MinecraftClient.getInstance().player.networkHandler.sendPacket(serverBoundPacket);
 
 		updateQueue.clear();
